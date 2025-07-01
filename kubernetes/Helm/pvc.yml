@@ -1,0 +1,18 @@
+# pvc.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-claim
+  namespace: torchserve
+spec:
+  # Use the default storage class for your cluster
+  storageClassName: "local-path"
+  
+  # --- THIS IS THE CRITICAL CHANGE ---
+  accessModes:
+    - ReadWriteOnce  # Changed from ReadWriteMany
+  # ----------------------------------
+  
+  resources:
+    requests:
+      storage: 10Gi 

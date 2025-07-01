@@ -1,0 +1,10 @@
+# ts-configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: torchserve-configmap
+  namespace: torchserve
+data:
+  config.properties: |
+    inference_address=http://0.0.0.0:8080
+    management_address=http://0.0.0.0:8081
