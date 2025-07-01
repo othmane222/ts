@@ -4,12 +4,12 @@ buildscript {
     toolVersion = '4.0.2'
   }
   dependencies {
-    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.13'
+    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.5'
   }
 }
 
 plugins {
-    id 'com.google.protobuf' version '0.8.13' apply false
+    id 'com.google.protobuf' version '0.9.5' apply false
     id 'idea'
     id 'com.github.spotbugs' version '6.0.7' apply false
 }
