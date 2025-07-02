@@ -23,7 +23,7 @@ pvc:
   # The name for the PVC resource that will be created.
   name: efs-claim
   # The StorageClass to use (e.g., "local-path", or a proper RWX class like "nfs-csi").
-  storageClassName: "local-path" # <-- CHANGE THIS when you have RWX storage
+  storageClassName: "" # <-- CHANGE THIS when you have RWX storage
   # The access modes for the volume.
   accessModes:
     - ReadWriteOnce # <-- CHANGE THIS to ReadWriteMany for multi-node scaling
