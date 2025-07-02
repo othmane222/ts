@@ -38,30 +38,46 @@ spec:
       volumes:
       - name: persistent-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.persistentVolume.name }}
+          # Use the name from values.yaml
+          claimName: {{ .Values.pvc.name }}
       - name: config-properties-volume
         configMap:
-          name: torchserve-configmap
+          # Use the name from values.yaml
+          name: {{ .Values.configmap.name }}
       # --- ADD THIS ENTIRE SECTION ---
+      # affinity:
+      #   podAntiAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #     - labelSelector:
+      #         matchExpressions:
+      #         - key: app
+      #           operator: In
+      #           values:
+      #           - torchserve
+      #       topologyKey: "kubernetes.io/hostname"
+      # # ----------------------------------------
       initContainers:
       - name: set-volume-permissions
-        image: busybox:1.36 # A tiny, simple image with shell tools
+        image: busybox:1.36
         command: ["/bin/sh", "-c"]
         args: 
           - |
+            # Create the model-store directory if it doesn't exist
+            mkdir -p /home/model-server/shared/model-store
+            
             # The 'model-server' user inside the torchserve container needs to own this directory.
             # We run this command as root to fix the ownership.
             chown -R 1000:1000 /home/model-server/shared
         volumeMounts:
-        - name: persistent-storage # Must match the volume name
+        - name: persistent-storage
           mountPath: {{ .Values.torchserve.pvd_mount }}
       # ------------------------------
 
       containers:
       - name: torchserve
         image: {{ .Values.torchserve_image }}
-        securityContext:
-          runAsUser: 0
+        # securityContext:
+        #   runAsUser: 0
         # --- THE FULLY EXPLICIT COMMAND ---
         # We are now telling TorchServe EVERYTHING directly.
         command: ["/bin/bash", "-c"]

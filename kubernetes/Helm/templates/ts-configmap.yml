@@ -1,0 +1,11 @@
+# templates/ts-configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.name }}
+  namespace: {{ .Release.Namespace }} # Let Helm manage the namespace
+data:
+  # The | tells YAML to treat the following as a multi-line string.
+  # The nindent function correctly indents the entire block.
+  config.properties: |
+{{ .Values.configmap.properties | nindent 4 }}

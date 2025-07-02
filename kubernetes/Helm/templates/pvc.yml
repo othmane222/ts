@@ -1,0 +1,15 @@
+# templates/pvc.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # It's good practice to template the name
+  name: {{ .Values.pvc.name }}
+  namespace: {{ .Release.Namespace }} # Let Helm manage the namespace
+spec:
+  storageClassName: {{ .Values.pvc.storageClassName | quote }}
+  accessModes:
+    # We need to loop through the access modes in the values file
+    {{- toYaml .Values.pvc.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.pvc.storageRequest }}
