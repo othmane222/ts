@@ -1,4 +1,4 @@
-# torchserve.yml (Corrected Final Version)
+# torchserve.yml (Corrigé avec des noms de ports plus courts)
 ---
 apiVersion: v1
 kind: Service
@@ -9,12 +9,18 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - name: preds
-    port: {{ .Values.torchserve.inference_port }}
-    targetPort: ts
-  - name: mdl
-    port: {{ .Values.torchserve.management_port }}
-    targetPort: ts-management
+  # --- Port d'inférence gRPC ---
+  - name: grpc-preds # Nom court (10 caractères)
+    appProtocol: grpc
+    port: {{ .Values.torchserve.grpc_inference_port }}
+    targetPort: grpc-ts-inf # Doit correspondre au nom dans le Deployment
+    nodePort: 30453
+
+  # --- Port de management gRPC ---
+  - name: grpc-mgmt # Nom court (9 caractères)
+    appProtocol: grpc
+    port: {{ .Values.torchserve.grpc_management_port }}
+    targetPort: grpc-ts-mgmt # Doit correspondre au nom dans le Deployment
     nodePort: 30176
   selector:
     app: torchserve
@@ -36,46 +42,68 @@ spec:
         app: torchserve
     spec:
       volumes:
-      # - name: persistent-log-storage
-      #   persistentVolumeClaim:
-      #     claimName: {{ .Values.pvc.name }}
       - name: config-properties-volume
         configMap:
-          name: {{ .Values.configmap.name }}
-      
-      # initContainers:
-      # - name: set-log-volume-permissions
-      #   image: busybox:1.36
-      #   command: ["/bin/sh", "-c", "chown -R 1000:1000 /logs"]
-      #   volumeMounts:
-      #   - name: persistent-log-storage
-      #     mountPath: /logs
-      
+          name: torchserve-config # Match the name in ts-configmap.yml
+      - name: model-store-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.pvc.name }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: lable
+                    operator: In
+                    values:
+                      - torchserve
       containers:
       - name: torchserve
         image: {{ .Values.torchserve_image }}
+        
+        # REMOVED the ENV block
+
+        # The Standard Startup Command, now pointing to our new config file
         command: ["/bin/bash", "-c"]
         args:
           - |
-            # La commande est plus simple car model-store et models sont dans le fichier de config
-            torchserve --start \
-              --ts-config /home/model-server/config.properties \
-              --disable-token-auth \
-              --enable-model-api &
+            mkdir -p /home/model-server/model-store;
+            torchserve --start --ts-config /home/model-server/config.properties --model-store /home/model-server/model-store &
             tail -f /dev/null
         
         ports:
-        - name: ts
-          containerPort: {{ .Values.torchserve.inference_port }}
-        - name: ts-management
-          containerPort: {{ .Values.torchserve.management_port }}
+          - name: grpc-ts-inf
+            containerPort: {{ .Values.torchserve.grpc_inference_port }}
+          - name: grpc-ts-mgmt
+            containerPort: {{ .Values.torchserve.grpc_management_port }}
         
         volumeMounts:
-        # - name: persistent-log-storage
-        #   mountPath: /home/model-server/shared/logs
         - name: config-properties-volume
           mountPath: /home/model-server/config.properties
           subPath: config.properties
+        - name: model-store-volume
+          mountPath: /home/model-server/model-store
+
+        resources:
+          limits:
+            cpu: {{ .Values.torchserve.n_cpu }}
+            memory: {{ .Values.torchserve.memory_limit }}
+          requests:
+            cpu: {{ .Values.torchserve.n_cpu }}
+            memory: {{ .Values.torchserve.memory_request }}
+        ports:
+        # --- On expose les ports gRPC du conteneur avec des noms courts ---
+        - name: grpc-ts-inf # Nom court (11 caractères)
+          containerPort: {{ .Values.torchserve.grpc_inference_port }}
+        - name: grpc-ts-mgmt # Nom court (12 caractères)
+          containerPort: {{ .Values.torchserve.grpc_management_port }}
+        
+        volumeMounts:
+        - name: config-properties-volume
+          mountPath: /home/model-server/config.properties
+          subPath: config.properties
+        - name: model-store-volume
+          mountPath: /home/model-server/model-store # Mount it directly at the model-store
 
         resources:
           limits:
