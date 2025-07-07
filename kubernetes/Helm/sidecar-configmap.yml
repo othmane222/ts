@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: torchserve-models-list
+  namespace: torchserve
+data:
+  # The list of models to be served, one URL per line.
+  models.txt: |
+    https://torchserve.pytorch.org/mar_files/alexnet.mar
+    https://torchserve.pytorch.org/mar_files/densenet161.mar
